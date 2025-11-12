@@ -79,7 +79,65 @@ string nombrePlazo(int cod) {
     }
 }
 
+void listarPlazos(Nodo<Plazo> *lis) {
+    while (lis) {
+        cout << *lis << endl;
+
+        Nodo<Bolsa> *lb = lis->dato.lisbolsas;
+        while (lb) {
+            cout << *lb << endl;
+            cout << "      Tipo      | Accion       | Cantidad" << endl;
+            mostrar(lb->dato.lisop);
+            lb = lb->sig;
+        }
+
+        cout << "----------------------------------------" << endl;
+        lis = lis->sig;
+    }
+}
+
 int main()
 {
+    fstream arch;
+    archi.open("Operaciones.bin", ios::in | ios::binary);
+    if (!archi) {
+        cout << "No se pudo abrir el archivo Operaciones.bin" << endl;
+        return EXIT_FAILURE;
+    }
+    Registro reg;
+    Plazo plz;
+    Nodo<Plazo> *lisPlazos = nullptr;
+    Nodo<Plazo> *pPlz;
+    Bolsa b;
+    Nodo<Bolsa> *pBolsa;
+    Operacion op;
 
+    while(archi>>reg){
+        plz.codigo = reg.plazo;
+        plz.nombre = nombrePlazo(reg.plazo);
+        pPlz = insertar_unico(plz, lisPlazos, critPlazo);
+        if(reg.cantidad>0){
+            pPlz->dato.cantVentas++;
+        }
+        else{
+            pPlz->dato.cantCompras++;
+        }
+
+        b.bolsa = reg.bolsa;
+        pBolsa = insertar_unico(b, pPlz->dato.lisbolsas, critBolsa);
+        pBolsa->dato.totalDinero += reg.preciouni * reg.cantidad;
+        pBolsa->dato.resultado += reg.preciouni * reg.cantidad;
+
+        op.tipo = (reg.cantidad < 0) ? "COMPRA" : "VENTA";
+        op.accion = reg.accion;
+        op.cantidad = reg.cantidad;
+        agregar(pBolsa->dato.lisop, op);
+    }
+
+    arch.close();
+
+    cout << "=== LISTADO POR PLAZO / BOLSA / OPERACION ===" << endl << endl;
+    listarPlazos(lisPlazos);
+
+    return 0;
 }
